@@ -6,34 +6,15 @@ package freecharttry1;
 
 import java.awt.Button;
 import java.awt.Label;
-import java.util.Locale;
-import javax.swing.JPanel;
-import org.jfree.data.general.DefaultPieDataset;
-import org.jfree.data.general.*;
-import org.jfree.data.xy.*;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartFrame;
 import org.jfree.chart.ChartPanel;
-import org.jfree.data.DomainOrder;
-import org.jfree.data.general.DatasetChangeListener;
-import org.jfree.data.general.DatasetGroup;
-import org.jfree.data.time.*;
-import org.jfree.chart.*;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.axis.NumberAxis;
-import java.awt.Dimension;
-import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
-import org.jfree.chart.renderer.xy.*;
-import org.jfree.chart.labels.StandardXYToolTipGenerator;
 import java.io.*;
 
 
 import java.awt.Dimension;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import javax.swing.JPanel;
 import org.jfree.chart.*;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.labels.StandardXYToolTipGenerator;
@@ -110,10 +91,11 @@ public class FreeChartTry1 extends ApplicationFrame
          count = count % numberOfLines;*/
         System.out.println("numberOfLines: " + numberOfLines);
         System.out.println("count: " + count);
-        XYDataset xydataset = createPriceDataset(file,count);
+        XYDataset xydataset = createPriceDataset(file,count);///CHANGE numerofline to count!!
         String s = "KGHM";
-        
-        
+        int last = ((TimeSeriesCollection)xydataset).getSeries(0).getItemCount();
+        RegularTimePeriod d = (((TimeSeriesCollection)xydataset).getSeries(0).getDataItem(last-1)).getPeriod();
+        this.l_today.setText("Today: " + d.getEnd().toString());
         System.out.println(xydataset.getItemCount(0));
         System.out.println(xydataset.getItemCount(1));
         JFreeChart jfreechart = ChartFactory.createTimeSeriesChart(s, "Date", "Price", xydataset, true, true, false);
@@ -249,13 +231,18 @@ public class FreeChartTry1 extends ApplicationFrame
 
         TimeSeriesCollection collection = new TimeSeriesCollection();
         collection.addSeries(timeseries);
-        TimeSeries sma50_t = MovingAverage.createMovingAverage(timeseries, "SMA50_T", 50, 49);
-        TimeSeries sma200_t = MovingAverage.createMovingAverage(timeseries, "SMA200_T", 200, 199);
+        TimeSeries sma50_t = MovingAverage.createMovingAverage(timeseries, "SMA50_T", 3, 3);
+        TimeSeries sma200_t = MovingAverage.createMovingAverage(timeseries, "SMA200_T", 200, 0);
         collection.addSeries(sma50_t);
         collection.addSeries(sma200_t);
-        //collection.addSeries(sma50);
+        collection.addSeries(sma50);
         //collection.addSeries(timeseries.cre);
-        //collection.addSeries(sma200);
+        collection.addSeries(sma200);
+        
+       /* for (int i = sma50.getItemCount() - 50 ; i < sma50.getItemCount() ; i++) {
+            System.out.println((sma50_t.getDataItem(i)).getValue() + " " + (sma50.getDataItem(i)).getValue());
+            System.out.println((sma50_t.getDataItem(i)).getPeriod() + " " + (sma50.getDataItem(i)).getPeriod());
+        }*/
         
         return collection;
     }
@@ -315,18 +302,13 @@ public class FreeChartTry1 extends ApplicationFrame
         
         bt_nextday.addActionListener(myactlistener);
         bt_rndday.addActionListener(myactlistener);
-        
         JFreeChart jfreechart = createCombinedChart();
         ChartPanel chartpanel = new ChartPanel(jfreechart,true,true,true,false,true);
         chartpanel.setPreferredSize(new Dimension(1000,540));
-        
         chartpanel.add(bt_nextday);
         chartpanel.add(bt_rndday);
-        
-        
+        chartpanel.add(this.l_today);
         setContentPane(chartpanel);   
-        
-        
     }
     
 
@@ -380,8 +362,9 @@ class MyActionListener implements ActionListener {
         
    bt_nextday.addActionListener(myactlistener);
    bt_rndday.addActionListener(myactlistener);
-     chartpanel.add(bt_nextday);
-        chartpanel.add(bt_rndday);
+  chartpanel.add(bt_nextday);
+  chartpanel.add(bt_rndday);
+  chartpanel.add(freetry1.l_today);
   freetry1.setContentPane(chartpanel);
   freetry1.validate();
   freetry1.repaint();
