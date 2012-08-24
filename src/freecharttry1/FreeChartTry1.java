@@ -5,6 +5,7 @@
 package freecharttry1;
 
 import java.awt.Button;
+import java.awt.Label;
 import java.util.Locale;
 import javax.swing.JPanel;
 import org.jfree.data.general.DefaultPieDataset;
@@ -58,8 +59,9 @@ public class FreeChartTry1 extends ApplicationFrame
  {
     String appname="moj";
     String filePath = "c:\\tools\\pierdy\\kghm.mst";
-    String tmp=null;
+  
     int numberOfLines=0;
+    Label l_today = null;
     
     
     int evaluateNumberOFLines(File file)
@@ -110,6 +112,10 @@ public class FreeChartTry1 extends ApplicationFrame
         System.out.println("count: " + count);
         XYDataset xydataset = createPriceDataset(file,count);
         String s = "KGHM";
+        
+        
+        System.out.println(xydataset.getItemCount(0));
+        System.out.println(xydataset.getItemCount(1));
         JFreeChart jfreechart = ChartFactory.createTimeSeriesChart(s, "Date", "Price", xydataset, true, true, false);
         XYPlot xyplot = (XYPlot)jfreechart.getPlot();
         NumberAxis numberaxis = (NumberAxis)xyplot.getRangeAxis();
@@ -118,7 +124,7 @@ public class FreeChartTry1 extends ApplicationFrame
         numberaxis.setNumberFormatOverride(decimalformat);
         XYItemRenderer xyitemrenderer = xyplot.getRenderer();
 	xyitemrenderer.setBaseToolTipGenerator(new StandardXYToolTipGenerator("{0}: ({1}, {2})", new SimpleDateFormat("d-MMM-yyyy"), new DecimalFormat("0.00")));
-	NumberAxis numberaxis1 = new NumberAxis("Volume");
+        NumberAxis numberaxis1 = new NumberAxis("Volume");
 	numberaxis1.setUpperMargin(1.0D);
 	xyplot.setRangeAxis(1, numberaxis1);
         
@@ -131,7 +137,7 @@ public class FreeChartTry1 extends ApplicationFrame
 	ChartUtilities.applyCurrentTheme(jfreechart);
 	xybarrenderer.setBarPainter(new StandardXYBarPainter());
 	xybarrenderer.setShadowVisible(false);
-        
+        jfreechart.setNotify(true);
         return jfreechart;
  
     }
@@ -141,7 +147,15 @@ public class FreeChartTry1 extends ApplicationFrame
     {
         int cntr=0;
         TimeSeries timeseries = new TimeSeries("Price");
+        TimeSeries sma50 = new TimeSeries("SMA50");
+        TimeSeries sma200 = new TimeSeries("SMA200");
+        
+        
         StringBuilder contents = new StringBuilder();
+        ArrayList<Double> lastFifty=new ArrayList<Double>();
+        ArrayList<Double> last200=new ArrayList<Double>();
+        
+        
         try {
             //use buffering, reading one line at a time
             //FileReader always assumes default encoding is OK!
@@ -149,8 +163,13 @@ public class FreeChartTry1 extends ApplicationFrame
             try {
                 String line = null;
                 while ((line = input.readLine()) != null) {
+                    
+                    
                     if (cntr >= count) break;
                     cntr++;
+                    
+                    if ( cntr == 1 ) continue;
+                    
                     String delims = "[,]";
                     String[] tokens = line.split(delims);
                     DateFormat formatter;
@@ -161,6 +180,60 @@ public class FreeChartTry1 extends ApplicationFrame
                         double closingPrice = Double.parseDouble(tokens[5]);
                                                 
                         timeseries.add(new Day(date),closingPrice);
+                    
+                        lastFifty.add( new Double(closingPrice));
+                        last200.add( new Double(closingPrice));
+                        
+                                    
+                        if ( cntr >= 51 )
+                        {
+                          if (cntr > 51)
+                          {
+                              lastFifty.remove(0);
+                          }
+                
+                          if ( lastFifty.size() != 50 )
+                              System.exit(0);
+                          
+                          
+                          
+                                    
+                          double avg = 0;
+                          for(double elem : lastFifty)
+                              avg += elem;
+                           
+                          avg /= 50;
+                          
+                          sma50.add(new Day(date),avg);
+                          
+                        }
+                        
+                        
+                         if ( cntr >= 201 )
+                        {
+                          if (cntr > 201)
+                          {
+                              last200.remove(0);
+                          }
+                
+                          if ( last200.size() != 200 )
+                              System.exit(0);
+                          
+                          
+                          
+                                    
+                          double avg = 0;
+                          for(double elem : last200)
+                              avg += elem;
+                           
+                          avg /= 200;
+                          
+                          sma200.add(new Day(date),avg);
+                          
+                        }
+                        
+                        
+                        
                         
                     } catch (ParseException e) {
                         System.out.println("dupa1");
@@ -174,7 +247,17 @@ public class FreeChartTry1 extends ApplicationFrame
             ex.printStackTrace();
         }
 
-        return new TimeSeriesCollection(timeseries);
+        TimeSeriesCollection collection = new TimeSeriesCollection();
+        collection.addSeries(timeseries);
+        TimeSeries sma50_t = MovingAverage.createMovingAverage(timeseries, "SMA50_T", 50, 49);
+        TimeSeries sma200_t = MovingAverage.createMovingAverage(timeseries, "SMA200_T", 200, 199);
+        collection.addSeries(sma50_t);
+        collection.addSeries(sma200_t);
+        //collection.addSeries(sma50);
+        //collection.addSeries(timeseries.cre);
+        //collection.addSeries(sma200);
+        
+        return collection;
     }
     
     private static IntervalXYDataset createVolumeDataset(File file,int count)
@@ -227,6 +310,7 @@ public class FreeChartTry1 extends ApplicationFrame
         
         Button bt_nextday = new Button("Next Day");
         Button bt_rndday = new Button("Random Day");
+        this.l_today = new Label();
         MyActionListener myactlistener = new MyActionListener(this);
         
         bt_nextday.addActionListener(myactlistener);
@@ -239,7 +323,10 @@ public class FreeChartTry1 extends ApplicationFrame
         chartpanel.add(bt_nextday);
         chartpanel.add(bt_rndday);
         
+        
         setContentPane(chartpanel);   
+        
+        
     }
     
 
@@ -250,6 +337,7 @@ public class FreeChartTry1 extends ApplicationFrame
      */
     public static void main(String[] args) {
         FreeChartTry1 try1 = new FreeChartTry1("moj");
+        
         try1.pack();
         RefineryUtilities.centerFrameOnScreen(try1);
         try1.setVisible(true);
@@ -284,6 +372,8 @@ class MyActionListener implements ActionListener {
   
   
   
+  
+  
    Button bt_nextday = new Button("Next Day");
    Button bt_rndday = new Button("Random Day");
    MyActionListener myactlistener = new MyActionListener(freetry1);
@@ -293,7 +383,9 @@ class MyActionListener implements ActionListener {
      chartpanel.add(bt_nextday);
         chartpanel.add(bt_rndday);
   freetry1.setContentPane(chartpanel);
-  freetry1.invalidate();
+  freetry1.validate();
+  freetry1.repaint();
+  
         
          
   } 
