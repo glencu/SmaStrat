@@ -58,7 +58,7 @@ public class FreeChartTry1 extends ApplicationFrame
  {
     String appname="moj";
     String filePath = "c:\\tools\\pierdy\\kghm.mst";
-    
+    String tmp=null;
     int numberOfLines=0;
     
     
