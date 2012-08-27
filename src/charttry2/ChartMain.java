@@ -50,7 +50,8 @@ public class ChartMain {
         chartpanel.setPreferredSize(new Dimension(1000,540));
 
         
-        frame.jTabbedPane1.add(chartpanel);
+        //frame.jTabbedPane1.jadd(chartpanel);
+        frame.jPanel1.add(chartpanel);
 
     }
     
