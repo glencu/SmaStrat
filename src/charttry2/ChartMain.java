@@ -58,9 +58,19 @@ public class ChartMain {
     
     JFreeChart createCombinedChart()
     {
+    
+       
         File file = new File(filePath);
         
-        this.numberOfLines = evaluateNumberOFLines(file);
+       
+        try{
+            this.numberOfLines = evaluateNumberOFLines(file);
+         }        
+         catch( FileNotFoundException e)
+        {
+           System.out.println(filePath + "not found");
+           System.exit(0);
+        }
         
         
         Random generator = new Random();
@@ -265,7 +275,7 @@ public class ChartMain {
          return new TimeSeriesCollection(timeseries);
     }
      
-     int evaluateNumberOFLines(File file)
+    int evaluateNumberOFLines(File file) throws FileNotFoundException
     {
          int result = 0;
             try {
@@ -288,6 +298,11 @@ public class ChartMain {
              input.close();
             }
            }
+            catch(FileNotFoundException e)
+            {
+               throw e;
+            }
+            
           catch (IOException ex){
            ex.printStackTrace();
          }   
